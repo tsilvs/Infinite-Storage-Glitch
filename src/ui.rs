@@ -2,7 +2,7 @@ use anyhow;
 #[allow(unused_imports)]
 use inquire::{min_length, Confirm, CustomType, MultiSelect, Password, Select, Text};
 
-use crate::args::{Commands, DislodgeParams, DownloadParams, EmbedParams};
+use crate::args::{Commands, DislodgeParams, DownloadParams, EmbedParams, DownloadAndDislodgeParams};
 
 pub async fn enrich_arguments(args: Option<Commands>) -> anyhow::Result<Commands> {
     // If we already know which mode we would run, defer to that mode.
@@ -16,12 +16,15 @@ pub async fn enrich_arguments(args: Option<Commands>) -> anyhow::Result<Commands
         }
         Some(Commands::Dislodge(dislodge_args)) => {
             Commands::Dislodge(enrich_dislodge_params(dislodge_args).await?)
+        },
+        Some(Commands::DownloadAndDislodge(download_and_dislodge_args)) => {
+            Commands::DownloadAndDislodge(enrich_download_and_dislodge_params(download_and_dislodge_args).await?)
         }
         None => {
-            let options = vec!["Embed", "Download", "Dislodge"];
+            let options = vec!["Embed", "Download", "Dislodge", "Download and Dislodge"];
 
             let modes = Select::new("Pick what you want to do with the program", options)
-                .with_help_message("Embed: Create a video from files,\n Download: Download files stored on YouTube,\n Dislodge: Return files from an embedded video")
+                .with_help_message("Embed: Create a video from files,\n Download: Download files stored on YouTube,\n Dislodge: Return files from an embedded video,\n Download and Dislodge: Download and dislodge files from a video.")
                 .prompt()
                 .unwrap();
 
@@ -32,6 +35,9 @@ pub async fn enrich_arguments(args: Option<Commands>) -> anyhow::Result<Commands
                 }
                 "Dislodge" => {
                     Commands::Dislodge(enrich_dislodge_params(DislodgeParams::default()).await?)
+                }
+                "Download and Dislodge" => {
+                    Commands::DownloadAndDislodge(enrich_download_and_dislodge_params(DownloadAndDislodgeParams::default()).await?)
                 }
                 _ => unreachable!(),
             }
@@ -184,5 +190,23 @@ async fn enrich_dislodge_params(mut args: DislodgeParams) -> anyhow::Result<Disl
     //     .with_default(8)
     //     .prompt()?;
 
+    Ok(args)
+}
+
+async fn enrich_download_and_dislodge_params(mut args: DownloadAndDislodgeParams) -> anyhow::Result<DownloadAndDislodgeParams> {
+    if args.url.is_none() {
+        let url = Text::new("What is the url of the video?")
+            .prompt()
+            .unwrap();
+        args.url = Some(url);
+    }
+
+    if args.out_path.is_none() {
+        let out_path = Text::new("Where should the output go?")
+            .with_help_message("Please include name of file and extension")
+            .prompt()
+            .unwrap();
+        args.out_path = Some(out_path);
+    }
     Ok(args)
 }

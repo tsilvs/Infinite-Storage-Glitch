@@ -1,7 +1,10 @@
-#### Notes about fork
+### Notes about fork
 
 I have a sincere interest in this idea and its implementation, and after discovering that the original creator, DvorakDwarf, had archived the repository in March, I decided to fork it and expand upon the vision I have for this project.
 
+[x] Make a command for both downloading and dislodging the dowloaded file.
+[ ] I had a hard time figuring out if the files I uploaded to yt and then downloaded was zipped AND encoded with AES or just zipped. Maybe etching the name of the file in the first frame together with the other data might be useful instead of specifying the name of the output file that's dislodged. (Only for black and white for now)
+[ ] Make the dislodging multithreaded (It might be already bottlenecked by the reading speed of each frame by Opencv)? 
 
 #### I was working on this instead of my finals, hope you appreciate it.
 

@@ -3,7 +3,7 @@ use std::process::Command;
 
 use crate::args::DownloadParams;
 
-pub async fn run_download(args: DownloadParams) -> anyhow::Result<()> {
+pub async fn run_download(args: DownloadParams) -> anyhow::Result<String> {
     let yt_dlp_path = download_yt_dlp(".").await?;
     
     let url = args.url.expect("No URL in params when run_download");
@@ -11,7 +11,7 @@ pub async fn run_download(args: DownloadParams) -> anyhow::Result<()> {
     // check if the yt_dlp_path exists
     if !yt_dlp_path.exists() {
         println!("yt-dlp not found");
-        return Ok(());
+        return Ok(String::from(""));
     }
     
     // Output path for the video has the format: `downloaded_{timestamp}.mp4`
@@ -32,11 +32,11 @@ pub async fn run_download(args: DownloadParams) -> anyhow::Result<()> {
     // check the output of the command
     if output.status.success() {
         println!("Video downloaded successfully");
-        println!("Output path: {}", std::fs::canonicalize(download_path).unwrap().display());
+        println!("Output path: {}", std::fs::canonicalize(download_path.clone()).unwrap().display());
     } else {
         println!("Video download failed");
         println!("Error: {}", String::from_utf8_lossy(&output.stderr));
     }
 
-    return Ok(());
+    return Ok(download_path);
 }

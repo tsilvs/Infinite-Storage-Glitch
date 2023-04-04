@@ -14,6 +14,7 @@ pub enum Commands {
     Embed(EmbedParams),
     Download(DownloadParams),
     Dislodge(DislodgeParams),
+    DownloadAndDislodge(DownloadAndDislodgeParams),
 }
 
 /// This encodes the specific params for embedding.
@@ -98,6 +99,17 @@ pub struct DislodgeParams {
     pub in_path: Option<String>,
 
     /// Path to file output (including extension)
+    #[arg(short, long)]
+    pub out_path: Option<String>,
+}
+
+/// This downloads and dislodges a video.
+#[derive(Args, Default)]
+pub struct DownloadAndDislodgeParams {
+    // Video URL
+    #[arg(short, long)]
+    pub url: Option<String>,
+    // out path to finished zip AFTER dislodging
     #[arg(short, long)]
     pub out_path: Option<String>,
 }
