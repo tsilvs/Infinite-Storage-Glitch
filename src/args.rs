@@ -98,9 +98,10 @@ pub struct DislodgeParams {
     #[arg(short, long)]
     pub in_path: Option<String>,
 
-    /// Path to file output (including extension)
-    #[arg(short, long)]
-    pub out_path: Option<String>,
+    // The video saves the filename in the instructions frame of the video when it is embedded.
+    // Path to file output (including extension)
+    //#[arg(short, long)]
+    //pub out_path: Option<String>,
 }
 
 /// This downloads and dislodges a video.
@@ -109,7 +110,8 @@ pub struct DownloadAndDislodgeParams {
     // Video URL
     #[arg(short, long)]
     pub url: Option<String>,
-    // out path to finished zip AFTER dislodging
-    #[arg(short, long)]
-    pub out_path: Option<String>,
+
+    // name of embedded file encoded in the instruction frame.
+    //#[arg(short, long)]
+    //pub out_path: Option<String>,
 }

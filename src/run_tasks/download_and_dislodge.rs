@@ -6,7 +6,6 @@ pub async fn run_download_and_dislodge(args: DownloadAndDislodgeParams) -> anyho
     let path = run_download(DownloadParams { url: args.url }).await?;
     run_dislodge(DislodgeParams {
         in_path: Some(path),
-        out_path: args.out_path,
     }).await?;
     Ok(())
 }

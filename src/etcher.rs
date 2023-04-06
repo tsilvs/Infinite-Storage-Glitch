@@ -315,7 +315,7 @@ fn read_color(
 
 /*
 Instructions:
-Etched on first frame, always be wrtten in binary despite output mode
+Etched on first frame, always be written in binary despite output mode
 Output mode is the first byte
 Size is constant 5
 11111111 = Color (255), 00000000 = Binary(0),
@@ -368,11 +368,21 @@ fn etch_instructions(settings: &Settings, data: &Data) -> anyhow::Result<EmbedSo
             dbg!(final_frame);
             u32_instructions.push(final_frame as u32);
             u32_instructions.push(final_byte as u32);
+
         }
     };
 
     u32_instructions.push(settings.size as u32);
-    u32_instructions.push(u32::MAX); //For some reason size not readable without this
+    // length of filename
+    u32_instructions.push(data.file_name.len() as u32);
+
+    for c in data.file_name.iter() {
+        u32_instructions.push(*c as u32);
+    }
+
+    u32_instructions.push(u32::MAX); //For some reason size not readable without this. keep this in mind.
+
+
 
     let instruction_data = rip_binary_u32(u32_instructions)?;
 
@@ -397,11 +407,12 @@ fn etch_instructions(settings: &Settings, data: &Data) -> anyhow::Result<EmbedSo
 fn read_instructions(
     source: &EmbedSource,
     threads: usize,
-) -> anyhow::Result<(OutputMode, i32, i32, Settings)> {
+) -> anyhow::Result<(OutputMode, i32, i32, Settings, String)> {
     //UGLY
     let binary_data = read_bw(source, 0, 1, 0)?;
     let u32_data = translate_u32(binary_data)?;
     // dbg!(&u32_data);
+    // translates the frame to binary -> u32
 
     let out_mode = u32_data[0];
 
@@ -413,13 +424,20 @@ fn read_instructions(
     let final_frame = u32_data[1] as i32;
     let final_byte = u32_data[2] as i32;
     let size = u32_data[3] as i32;
+    let file_name_size = u32_data[4] as i32;
+
+    let mut file_name = String::new();
+    for i in 0..file_name_size {
+        let c = u32_data[5 + i as usize] as u8;
+        file_name.push(c as char);
+    }
 
     let height = source.frame_size.height;
     let width = source.frame_size.width;
 
     let settings = Settings::new(size, threads, 1337, width, height);
 
-    return Ok((out_mode, final_frame, final_byte, settings));
+    return Ok((out_mode, final_frame, final_byte, settings, file_name));
 }
 
 pub fn etch(path: &str, data: Data, settings: Settings) -> anyhow::Result<()> {
@@ -549,7 +567,7 @@ pub fn etch(path: &str, data: Data, settings: Settings) -> anyhow::Result<()> {
     return Ok(());
 }
 
-pub fn read(path: &str, threads: usize) -> anyhow::Result<Vec<u8>> {
+pub fn read(path: &str, threads: usize) -> anyhow::Result<(Vec<u8>, String)> {
     let _timer = Timer::new("Dislodging frame");
     let instruction_size = 5;
 
@@ -560,7 +578,7 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<Vec<u8>> {
     video.read(&mut frame)?;
     let instruction_source =
         EmbedSource::from(frame.clone(), instruction_size, true).expect("Couldn't create instructions");
-    let (out_mode, final_frame, final_byte, settings) =
+    let (out_mode, final_frame, final_byte, settings, file_name) =
         read_instructions(&instruction_source, threads)?;
 
     let mut byte_data = Vec::new();
@@ -594,7 +612,7 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<Vec<u8>> {
     }
 
     println!("Video read successfully");
-    return Ok(byte_data);
+    return Ok((byte_data, file_name));
 }
 
 //Uses literally all the RAM

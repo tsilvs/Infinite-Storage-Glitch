@@ -176,13 +176,14 @@ async fn enrich_dislodge_params(mut args: DislodgeParams) -> anyhow::Result<Disl
         args.in_path = Some(in_path);
     }
 
-    if args.out_path.is_none() {
-        let out_path = Text::new("Where should the output go ?")
-            .with_help_message("Please include name of file and extension")
-            .prompt()
-            .unwrap();
-        args.out_path = Some(out_path);
-    }
+    // out path is no longer needed, filename is now embedded in the video.
+    // if args.out_path.is_none() {
+    //     let out_path = Text::new("Where should the output go ?")
+    //         .with_help_message("Please include name of file and extension")
+    //         .prompt()
+    //         .unwrap();
+    //     args.out_path = Some(out_path);
+    // }
 
     // let threads = CustomType::<usize>::new("How many threads to dedicate for processing ?")
     //     .with_error_message("Please type a valid number")
@@ -201,12 +202,12 @@ async fn enrich_download_and_dislodge_params(mut args: DownloadAndDislodgeParams
         args.url = Some(url);
     }
 
-    if args.out_path.is_none() {
-        let out_path = Text::new("Where should the output go?")
-            .with_help_message("Please include name of file and extension")
-            .prompt()
-            .unwrap();
-        args.out_path = Some(out_path);
-    }
+    // if args.out_path.is_none() {
+    //     let out_path = Text::new("Where should the output go?")
+    //         .with_help_message("Please include name of file and extension")
+    //         .prompt()
+    //         .unwrap();
+    //     args.out_path = Some(out_path);
+    // }
     Ok(args)
 }
