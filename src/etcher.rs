@@ -368,21 +368,21 @@ fn etch_instructions(settings: &Settings, data: &Data) -> anyhow::Result<EmbedSo
             dbg!(final_frame);
             u32_instructions.push(final_frame as u32);
             u32_instructions.push(final_byte as u32);
-
         }
     };
 
     u32_instructions.push(settings.size as u32);
     // length of filename
-    u32_instructions.push(data.file_name.len() as u32);
+    u32_instructions.push(data.file_name.len() as u32 / 4);
 
-    for c in data.file_name.iter() {
-        u32_instructions.push(*c as u32);
+    // cram 4 u8 into each u32
+    let crammed = u8_into_u32(&data.file_name);
+
+    for crammed in crammed {
+        u32_instructions.push(crammed);
     }
 
     u32_instructions.push(u32::MAX); //For some reason size not readable without this. keep this in mind.
-
-
 
     let instruction_data = rip_binary_u32(u32_instructions)?;
 
@@ -402,6 +402,43 @@ fn etch_instructions(settings: &Settings, data: &Data) -> anyhow::Result<EmbedSo
     // imwrite("src/out/test1.png", &source.image, &Vector::new())?;
 
     return Ok(source);
+}
+
+fn u8_into_u32(data: &[u8]) -> Vec<u32> {
+    let mut u32_data: Vec<u32> = Vec::new();
+    let mut u32_value: u32 = 0;
+
+    for (i, &byte) in data.iter().enumerate() {
+        let shift_amount = (i % 4) * 8;
+        u32_value |= (byte as u32) << shift_amount;
+
+        if i % 4 == 3 {
+            u32_data.push(u32_value);
+            u32_value = 0;
+        }
+    }
+
+    if data.len() % 4 != 0 {
+        u32_data.push(u32_value);
+    }
+
+    u32_data
+}
+
+fn u32_into_u8(data: &[u32]) -> Vec<u8> {
+    let mut u8_data: Vec<u8> = Vec::new();
+    let mut u8_value: u8 = 0;
+
+    for &byte in data.iter() {
+        for j in 0..4 {
+            let shift_amount = j * 8;
+            u8_value |= ((byte >> shift_amount) & 0xFF) as u8;
+            u8_data.push(u8_value);
+            u8_value = 0;
+        }
+    }
+
+    u8_data
 }
 
 fn read_instructions(
@@ -426,11 +463,12 @@ fn read_instructions(
     let size = u32_data[3] as i32;
     let file_name_size = u32_data[4] as i32;
 
-    let mut file_name = String::new();
-    for i in 0..file_name_size {
-        let c = u32_data[5 + i as usize] as u8;
-        file_name.push(c as char);
-    }
+    let file_name = u32_into_u8(&u32_data[5..5 + file_name_size as usize]);
+
+    let mut file_name = file_name.iter().map(|x| *x as char).collect::<Vec<char>>();
+    file_name.retain(|&c| c != '\0');
+
+    let file_name = file_name.into_iter().collect::<String>();
 
     let height = source.frame_size.height;
     let width = source.frame_size.width;
@@ -576,8 +614,8 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<(Vec<u8>, String)> {
 
     //Could probably avoid cloning
     video.read(&mut frame)?;
-    let instruction_source =
-        EmbedSource::from(frame.clone(), instruction_size, true).expect("Couldn't create instructions");
+    let instruction_source = EmbedSource::from(frame.clone(), instruction_size, true)
+        .expect("Couldn't create instructions");
     let (out_mode, final_frame, final_byte, settings, file_name) =
         read_instructions(&instruction_source, threads)?;
 
@@ -596,7 +634,8 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<(Vec<u8>, String)> {
             println!("On frame: {}", current_frame);
         }
 
-        let source = EmbedSource::from(frame.clone(), settings.size, false).expect("Reading frame failed");
+        let source =
+            EmbedSource::from(frame.clone(), settings.size, false).expect("Reading frame failed");
 
         let frame_data = match out_mode {
             OutputMode::Color => read_color(&source, current_frame, 99999999, final_byte).unwrap(),
