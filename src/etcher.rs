@@ -373,7 +373,11 @@ fn etch_instructions(settings: &Settings, data: &Data) -> anyhow::Result<EmbedSo
 
     u32_instructions.push(settings.size as u32);
     // length of filename
-    u32_instructions.push(data.file_name.len() as u32 / 4);
+    if data.file_name.len() % 4 != 0 {
+        u32_instructions.push(data.file_name.len() as u32 / 4 + 1);
+    } else {
+        u32_instructions.push(data.file_name.len() as u32 / 4);
+    }
 
     // cram 4 u8 into each u32
     let crammed = u8_into_u32(&data.file_name);
@@ -418,7 +422,7 @@ fn u8_into_u32(data: &[u8]) -> Vec<u32> {
         }
     }
 
-    if data.len() % 4 != 0 {
+    if u32_value != 0 {
         u32_data.push(u32_value);
     }
 
