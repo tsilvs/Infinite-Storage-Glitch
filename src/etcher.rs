@@ -10,6 +10,8 @@ use crate::embedsource::EmbedSource;
 use crate::settings::{Data, OutputMode, Settings};
 use crate::timer::Timer;
 
+const BATCH_SIZE_PER_PROCESS: usize = 30;
+
 //Get and write bytes from and to files. Start and end of app
 //sounds cooler than og name (encode)
 pub fn rip_bytes(path: &str) -> anyhow::Result<Vec<u8>> {
@@ -47,7 +49,6 @@ pub fn rip_binary(byte_data: Vec<u8>) -> anyhow::Result<Vec<bool>> {
         }
     }
     println!("Binary ripped successfully");
-    // println!("Binary length: {}", binary_data.len());
     return Ok(binary_data);
 }
 
@@ -615,6 +616,7 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<(Vec<u8>, String)> {
 
     let mut video = VideoCapture::from_file(&path, CAP_ANY).expect("Could not open video path");
     let mut frame = Mat::default();
+    let cpu_num = num_cpus::get();
 
     //Could probably avoid cloning
     video.read(&mut frame)?;
@@ -625,22 +627,108 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<(Vec<u8>, String)> {
 
     let mut byte_data = Vec::new();
     let mut current_frame = 1;
+    let mut batch: Vec<Mat> = Vec::new();
+    let mut how_many_times = 0;
     loop {
-        // let _timer = Timer::new("Reading frame  (clone included)");
         video.read(&mut frame)?;
 
-        //If it reads an empty image, the video stopped
+        batch.push(frame.clone());
         if frame.cols() == 0 {
+            // needs do be dones something with the lasts frames in the batch.
             break;
         }
 
-        if current_frame % 20 == 0 {
-            println!("On frame: {}", current_frame);
+        if batch.len() == cpu_num * BATCH_SIZE_PER_PROCESS {
+            how_many_times += 1;
+
+            let mut spool = Vec::new();
+
+            for i in 0..cpu_num {
+                let frame_batch = cutoff_left(&mut batch, BATCH_SIZE_PER_PROCESS);
+                let thread = thread::spawn(move || {
+                    let mut thread_byte_data = Vec::new();
+
+                    for (frame_index, f) in frame_batch.iter().enumerate() {
+                        let source = EmbedSource::from(f.clone(), settings.size, false)
+                            .expect("Reading frame failed");
+                        let frame_data = match out_mode {
+                            OutputMode::Color => read_color(
+                                &source,
+                                (1 + i * BATCH_SIZE_PER_PROCESS
+                                    + frame_index
+                                    + ((how_many_times - 1) * cpu_num * BATCH_SIZE_PER_PROCESS))
+                                    .try_into()
+                                    .unwrap(),
+                                final_frame,
+                                final_byte,
+                            )
+                            .unwrap(),
+                            OutputMode::Binary => {
+                                let binary_data = read_bw(
+                                    &source,
+                                    (1 + i * BATCH_SIZE_PER_PROCESS
+                                        + frame_index
+                                        + ((how_many_times - 1)
+                                            * cpu_num
+                                            * BATCH_SIZE_PER_PROCESS))
+                                        .try_into()
+                                        .unwrap(),
+                                    final_frame,
+                                    final_byte,
+                                )
+                                .unwrap();
+                                translate_u8(binary_data).unwrap()
+                            }
+                        };
+                        thread_byte_data.extend(frame_data);
+                    }
+                    return thread_byte_data;
+                });
+
+                spool.push(thread);
+            }
+            let __timer = Timer::new("Joining threads");
+
+            for thread in spool {
+                let frame_chunk = thread.join().unwrap();
+                byte_data.extend(frame_chunk);
+            }
+            drop(__timer);
         }
 
+        // // let _timer = Timer::new("Reading frame  (clone included)");
+        // video.read(&mut frame)?;
+        // batch.push(frame.clone());
+
+        // //If it reads an empty image, the video stopped
+        // if frame.cols() == 0 {
+        //     break;
+        // }
+
+        // if current_frame % 20 == 0 {
+        //     println!("On frame: {}", current_frame);
+        // }
+
+        // let source =
+        //     EmbedSource::from(frame.clone(), settings.size, false).expect("Reading frame failed");
+
+        // let frame_data = match out_mode {
+        //     OutputMode::Color => read_color(&source, current_frame, 99999999, final_byte).unwrap(),
+        //     OutputMode::Binary => {
+        //         let binary_data = read_bw(&source, current_frame, final_frame, final_byte).unwrap();
+        //         translate_u8(binary_data).unwrap()
+        //     }
+        // };
+
+        // current_frame += 1;
+
+        // byte_data.extend(frame_data);
+    }
+
+    current_frame += (cpu_num * BATCH_SIZE_PER_PROCESS) as i32 * how_many_times as i32;
+    for frame in batch.clone().iter() {
         let source =
             EmbedSource::from(frame.clone(), settings.size, false).expect("Reading frame failed");
-
         let frame_data = match out_mode {
             OutputMode::Color => read_color(&source, current_frame, 99999999, final_byte).unwrap(),
             OutputMode::Binary => {
@@ -648,14 +736,22 @@ pub fn read(path: &str, threads: usize) -> anyhow::Result<(Vec<u8>, String)> {
                 translate_u8(binary_data).unwrap()
             }
         };
-
-        current_frame += 1;
-
         byte_data.extend(frame_data);
     }
 
     println!("Video read successfully");
     return Ok((byte_data, file_name));
+}
+
+pub fn cutoff_left<T>(vec: &mut Vec<T>, amount: usize) -> Vec<T> {
+    let mut new_vec = Vec::new();
+    for _ in 0..amount {
+        if vec.len() == 0 {
+            break;
+        }
+        new_vec.push(vec.remove(0));
+    }
+    return new_vec;
 }
 
 //Uses literally all the RAM
