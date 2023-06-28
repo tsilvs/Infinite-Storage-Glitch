@@ -6,7 +6,7 @@ I have a sincere interest in this idea and its implementation, and after discove
 - [x] I had a hard time figuring out if the files I uploaded to yt and then downloaded was zipped AND encoded with AES or just zipped. Maybe etching the name of the file in the first frame together with the other data might be useful instead of specifying the name of the output file that's dislodged. (Only for black and white for now)
 - [ ] Progress bar?
 - [ ] Encryption command with AES
-- [ ] Make the dislodging multithreaded (It might be already bottlenecked by the reading speed of each frame by Opencv (my guess is probably yes))? 
+- [x] ~~Make the dislodging multithreaded (It might be already bottlenecked by the reading speed of each frame by Opencv (my guess is probably yes))?~~ Multithreading achieved!!
 
 #### I was working on this instead of my finals, hope you appreciate it.
 
