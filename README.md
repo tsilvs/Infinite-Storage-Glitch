@@ -12,6 +12,8 @@ I have a sincere interest in this idea and its implementation, and after discove
 
 <a href="https://www.buymeacoffee.com/HistidineDwarf" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
+### Bump the opencv crate to the newest version if it doesn't build properly
+
 Treat this less like the next dropbox and more like a "party trick" or a set of techniques to learn to pass data through compression. I do not endorse high volume use of this tool. I will also refrain from approving more commits to make the tool more convenient to use. There are several bugs that limit the use like the poor use of RAM limiting the size of files to about 100mb and they will remain. If you wish to fix these, you are on your own.
 
 If Youtube sends me a Cease and Desist I'll gladly shut this down.
