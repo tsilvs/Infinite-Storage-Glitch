@@ -1,18 +1,18 @@
-### Notes about fork
+# This is fork of a fork!
 
-I have a sincere interest in this idea and its implementation, and after discovering that the original creator, DvorakDwarf, had archived the repository in March, I decided to fork it and expand upon the vision I have for this project.
+># Notes about fork
+>
+>I have a sincere interest in this idea and its implementation, and after discovering that the original creator, DvorakDwarf, had archived the repository in March, I decided to fork it and expand upon the vision I have for this project.
+>
+>- [x] Make a command for both downloading and dislodging the dowloaded file.
+>- [x] I had a hard time figuring out if the files I uploaded to yt and then downloaded was zipped AND encoded with AES or just zipped. Maybe etching the name of the file in the first frame together with the other data might be useful instead of specifying the name of the output file that's dislodged. (Only for black and white for now)
+>- [ ] Progress bar?
+>- [ ] Encryption command with AES
+>- [x] ~~Make the dislodging multithreaded (It might be already bottlenecked by the reading speed of each frame by Opencv (my guess is probably yes))?~~ Multithreading achieved!!
 
-- [x] Make a command for both downloading and dislodging the dowloaded file.
-- [x] I had a hard time figuring out if the files I uploaded to yt and then downloaded was zipped AND encoded with AES or just zipped. Maybe etching the name of the file in the first frame together with the other data might be useful instead of specifying the name of the output file that's dislodged. (Only for black and white for now)
-- [ ] Progress bar?
-- [ ] Encryption command with AES
-- [x] ~~Make the dislodging multithreaded (It might be already bottlenecked by the reading speed of each frame by Opencv (my guess is probably yes))?~~ Multithreading achieved!!
+# Original README
 
-#### I was working on this instead of my finals, hope you appreciate it.
-
-<a href="https://www.buymeacoffee.com/HistidineDwarf" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
-### Bump the opencv crate to the newest version if it doesn't build properly
+> **Bump the opencv crate to the newest version if it doesn't build properly**
 
 Treat this less like the next dropbox and more like a "party trick" or a set of techniques to learn to pass data through compression. I do not endorse high volume use of this tool. I will also refrain from approving more commits to make the tool more convenient to use. There are several bugs that limit the use like the poor use of RAM limiting the size of files to about 100mb and they will remain. If you wish to fix these, you are on your own.
 
